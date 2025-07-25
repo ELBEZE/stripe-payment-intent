@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inscription EPP MIH</title>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <h2>Inscription à l'EPP MIH</h2>
+  <form id="payment-form">
+    <input type="text" id="name" placeholder="Nom complet" required /><br />
+    <input type="email" id="email" placeholder="Email" required /><br />
+    <select id="session" required>
+      <option value="">Choisissez une session</option>
+      <option value="29-juillet">29 juillet</option>
+      <option value="15-aout">15 août</option>
+    </select><br />
+    <div id="card-element"></div>
+    <button type="submit">Préinscription</button>
+  </form>
+
+  <div id="payment-message"></div>
+  <script>
+    const stripe = Stripe("pk_test_..."); // Remplacer avec ta clé publique
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const elements = stripe.elements();
+      const cardElement = elements.create("card");
+      cardElement.mount("#card-element");
+
+      const form = document.getElementById("payment-form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const res = await fetch("/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: 1000 }), // 10.00 €
+        });
+        const { clientSecret } = await res.json();
+
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: document.getElementById("name").value,
+              email: document.getElementById("email").value,
+            },
+          },
+        });
+
+        document.getElementById("payment-message").innerText = 
+          result.error ? result.error.message : "Pré-autorisation réussie";
+      });
+    });
+  </script>
+</body>
+</html>
