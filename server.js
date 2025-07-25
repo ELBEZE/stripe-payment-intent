@@ -1,28 +1,14 @@
-const express = require("express");
+const express = require('express');
+const path = require('path');
 const app = express();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const path = require("path");
 
-app.use(cors());
-app.use(bodyParser.json());
+app.use(express.static(__dirname));
 
-// Sert le fichier index.html
-app.use(express.static(path.join(__dirname, ".")));
-
-app.post("/create-payment-intent", async (req, res) => {
-  const { amount } = req.body;
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "eur",
-      capture_method: "manual",
-    });
-    res.send({ clientSecret: paymentIntent.client_secret });
-  } catch (err) {
-    res.status(400).send({ error: err.message });
-  }
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur le port ${PORT}`);
+});
