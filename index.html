@@ -15,25 +15,44 @@
   </form>
 
   <script>
-    const stripe = Stripe('pk_live_51RoWOb1ASDwMqR4fM5FjB5n7LSfJqzYOvgYMI6LOf1ROBNbD4taFDyDYRWCjvnKNZX3Lt9mvFdy7Vmv2VLzpVtfY00AIEXh0No'); // ⛔ Remplace par ta vraie clé publique Stripe
+    const stripe = Stripe('pk_live_51RoWOb1ASDwMqR4fM5FjB5n7LSfJqzYOvgYMI6LOf1ROBNbD4taFDyDYRWCjvnKNZX3Lt9mvFdy7Vmv2VLzpVtfY00AIEXh0No'); // ✅ Clé publique Stripe
 
     const elements = stripe.elements();
     const card = elements.create('card');
     card.mount('#card-element');
 
     const form = document.getElementById('payment-form');
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const { paymentMethod, error } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: card,
-        billing_details: { name: document.getElementById('name').value }
-      });
 
-      if (error) {
-        document.getElementById('card-errors').textContent = error.message;
-      } else {
-        alert("Paiement en attente. Tout fonctionne !");
+      const name = document.getElementById('name').value;
+
+      try {
+        // 1. Demander au serveur un clientSecret avec /create-payment-intent
+        const response = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const { clientSecret } = await response.json();
+
+        // 2. Confirmer le paiement (en fait, l'empreinte CB)
+        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: card,
+            billing_details: { name }
+          }
+        });
+
+        if (error) {
+          document.getElementById('card-errors').textContent = error.message;
+        } else {
+          alert('Empreinte CB réalisée avec succès ! ID : ' + paymentIntent.id);
+        }
+
+      } catch (err) {
+        document.getElementById('card-errors').textContent = err.message;
       }
     });
   </script>
