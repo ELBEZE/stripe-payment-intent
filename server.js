@@ -30,6 +30,27 @@ app.post('/create-payment-intent', async (req, res) => {
     res.status(500).send({ error: err.message });
   }
 });
+// ✅ Capture manuelle d'une empreinte CB
+app.post('/capture-payment', async (req, res) => {
+  const { paymentIntentId } = req.body;
+  try {
+    const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+    res.send({ status: 'captured', paymentIntent });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
+
+// ❌ Annulation d'une empreinte CB
+app.post('/cancel-payment', async (req, res) => {
+  const { paymentIntentId } = req.body;
+  try {
+    const canceledIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+    res.send({ status: 'cancelled', canceledIntent });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
