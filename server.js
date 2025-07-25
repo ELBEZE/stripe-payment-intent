@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 10000, // 100 euros
+      amount: 50000, // 500 euros
       currency: 'eur',
       capture_method: 'manual' // ✅ Empreinte CB sans encaissement immédiat
     });
