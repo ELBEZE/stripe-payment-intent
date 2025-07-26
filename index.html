@@ -5,22 +5,23 @@
   <title>Inscription EPP - Paiement sécurisé</title>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    #loading-message {
+    #loading {
       display: none;
       font-weight: bold;
-      margin-top: 10px;
-      color: #444;
+      color: #0066cc;
     }
   </style>
 </head>
 <body>
   <h2>Empreinte de Carte Bancaire</h2>
+
   <form id="payment-form">
     <input type="text" id="name" placeholder="Nom complet" required><br><br>
     <div id="card-element"></div><br>
-    <button type="submit">Valider</button>
-    <div id="card-errors" role="alert"></div>
-    <div id="loading-message">⏳ Merci de patienter…</div>
+
+    <button type="submit">Valider</button><br><br>
+    <div id="loading">⏳ Veuillez patienter...</div>
+    <div id="card-errors" role="alert" style="color: red;"></div>
   </form>
 
   <script>
@@ -30,13 +31,13 @@
     card.mount('#card-element');
 
     const form = document.getElementById('payment-form');
-    const loadingMessage = document.getElementById('loading-message');
+    const loading = document.getElementById('loading');
     const cardErrors = document.getElementById('card-errors');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      loadingMessage.style.display = 'block';
-      cardErrors.textContent = '';
+      loading.style.display = 'block'; // Affiche le message de chargement
+      cardErrors.textContent = ""; // Reset les erreurs
 
       try {
         const response = await fetch('/create-payment-intent', {
@@ -58,13 +59,17 @@
 
         if (result.error) {
           cardErrors.textContent = result.error.message;
-        } else if (result.paymentIntent.status === 'requires_capture') {
-          alert("✅ Empreinte enregistrée avec succès !");
+        } else {
+          if (result.paymentIntent.status === 'requires_capture') {
+            alert("✅ Empreinte enregistrée avec succès !");
+            form.reset();
+          }
         }
       } catch (err) {
-        cardErrors.textContent = "Une erreur est survenue.";
+        console.error("Erreur :", err);
+        cardErrors.textContent = "Une erreur est survenue : " + err.message;
       } finally {
-        loadingMessage.style.display = 'none';
+        loading.style.display = 'none'; // Cache le message de chargement
       }
     });
   </script>
