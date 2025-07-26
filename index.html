@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <title>Inscription EPP - Paiement sécurisé</title>
   <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    #loading-message {
+      display: none;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #444;
+    }
+  </style>
 </head>
 <body>
   <h2>Empreinte de Carte Bancaire</h2>
@@ -12,44 +20,53 @@
     <div id="card-element"></div><br>
     <button type="submit">Valider</button>
     <div id="card-errors" role="alert"></div>
+    <div id="loading-message">⏳ Merci de patienter…</div>
   </form>
 
   <script>
-  const stripe = Stripe('pk_test_51RoWOb1ASDwMqR4fOhDUI7Gq2prQNCAPCnZbgfZhaWkqHaVadEMLA0iLSTNr2DZJWOf4DonrY5sc3mtEwXs3dPpe00z07TynFD'); // ← Mets ici ta vraie clé publique Stripe
+    const stripe = Stripe('pk_test_51RoWOb1ASDwMqR4fOhDUI7Gq2prQNCAPCnZbgfZhaWkqHaVadEMLA0iLSTNr2DZJWOf4DonrY5sc3mtEwXs3dPpe00z07TynFD');
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
 
-  const elements = stripe.elements();
-  const card = elements.create('card');
-  card.mount('#card-element');
+    const form = document.getElementById('payment-form');
+    const loadingMessage = document.getElementById('loading-message');
+    const cardErrors = document.getElementById('card-errors');
 
-  const form = document.getElementById('payment-form');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loadingMessage.style.display = 'block';
+      cardErrors.textContent = '';
 
-    // 1. Appelle ton serveur pour créer un PaymentIntent
-    const response = await fetch('/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}) // tu pourrais ajouter un montant ou nom si besoin
-    });
+      try {
+        const response = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
 
-    const { clientSecret } = await response.json();
+        const { clientSecret } = await response.json();
 
-    // 2. Confirme l’empreinte (sans capture)
-    const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: card,
-        billing_details: {
-          name: document.getElementById('name').value
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: card,
+            billing_details: {
+              name: document.getElementById('name').value
+            }
+          }
+        });
+
+        if (result.error) {
+          cardErrors.textContent = result.error.message;
+        } else if (result.paymentIntent.status === 'requires_capture') {
+          alert("✅ Empreinte enregistrée avec succès !");
         }
+      } catch (err) {
+        cardErrors.textContent = "Une erreur est survenue.";
+      } finally {
+        loadingMessage.style.display = 'none';
       }
     });
-
-    if (result.error) {
-      document.getElementById('card-errors').textContent = result.error.message;
-    } else {
-      if (result.paymentIntent.status === 'requires_capture') {
-        alert("✅ Empreinte enregistrée avec succès !");
-      }
-    }
-  });
-</script>
+  </script>
+</body>
+</html>
