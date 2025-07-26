@@ -1,75 +1,64 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Inscription EPP - Paiement sécurisé</title>
+  <title>Empreinte de Carte Bancaire</title>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    #loading {
-      display: none;
-      font-weight: bold;
-      color: #0066cc;
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .form-row { margin-bottom: 20px; }
+    .StripeElement {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #card-errors {
+      color: red;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
-  <h2>Empreinte de Carte Bancaire</h2>
-
+  <h1>Empreinte de Carte Bancaire</h1>
   <form id="payment-form">
-    <input type="text" id="name" placeholder="Nom complet" required><br><br>
-    <div id="card-element"></div><br>
-
-    <button type="submit">Valider</button><br><br>
-    <div id="loading">⏳ Veuillez patienter...</div>
-    <div id="card-errors" role="alert" style="color: red;"></div>
+    <div class="form-row">
+      <label for="card-element">Numéro de carte</label>
+      <div id="card-element"></div>
+      <div id="card-errors" role="alert"></div>
+    </div>
+    <button type="submit">Valider</button>
   </form>
 
   <script>
-    const stripe = Stripe('pk_live_51RoWOb1ASDwMqR4fM5FjB5n7LSfJqzYOvgYMI6LOf1ROBNbD4taFDyDYRWCjvnKNZX3Lt9mvFdy7Vmv2VLzpVtfY00AIEXh0No');
+    const stripe = Stripe("pk_live_51RoWOb1ASDwMqR4fM5FjB5n7LSfJqzYOvgYMI6LOf1ROBNbD4taFDyDYRWCjvnKNZX3Lt9mvFdy7Vmv2VLzpVtfY00AIEXh0No"); // ← Remplace par ta vraie clé publique Stripe
     const elements = stripe.elements();
-    const card = elements.create('card');
-    card.mount('#card-element');
+    const card = elements.create("card");
+    card.mount("#card-element");
 
-    const form = document.getElementById('payment-form');
-    const loading = document.getElementById('loading');
-    const cardErrors = document.getElementById('card-errors');
+    const form = document.getElementById("payment-form");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      loading.style.display = 'block'; // Affiche le message de chargement
-      cardErrors.textContent = ""; // Reset les erreurs
+      // Appel à ton backend pour créer un PaymentIntent
+      const res = await fetch("/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}) // tu peux ajouter un montant ici si besoin
+      });
 
-      try {
-        const response = await fetch('/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
+      const { clientSecret } = await res.json();
 
-        const { clientSecret } = await response.json();
-
-        const result = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: card,
-            billing_details: {
-              name: document.getElementById('name').value
-            }
-          }
-        });
-
-        if (result.error) {
-          cardErrors.textContent = result.error.message;
-        } else {
-          if (result.paymentIntent.status === 'requires_capture') {
-            alert("✅ Empreinte enregistrée avec succès !");
-            form.reset();
-          }
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: card
         }
-      } catch (err) {
-        console.error("Erreur :", err);
-        cardErrors.textContent = "Une erreur est survenue : " + err.message;
-      } finally {
-        loading.style.display = 'none'; // Cache le message de chargement
+      });
+
+      if (result.error) {
+        document.getElementById("card-errors").textContent = result.error.message;
+      } else {
+        if (result.paymentIntent.status === "succeeded") {
+          alert("Paiement réussi !");
+        }
       }
     });
   </script>

@@ -12,7 +12,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // ✅ Clé Str
 const app = express();
 
 // ✅ Clé Stripe tirée de .env ou .env.production selon le mode
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(cors());
 app.use(bodyParser.json()); // ✅ Ajouté
@@ -62,6 +61,21 @@ app.post('/cancel-payment', async (req, res) => {
 
 // 🚀 Démarrage serveur
 const PORT = process.env.PORT || 3000;
+app.post('/create-payment-intent', async (req, res) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 100, // Montant en centimes (1,00€)
+      currency: 'eur',
+      capture_method: 'manual', // pour empreinte CB (capture différée)
+    });
+
+    res.send({ clientSecret: paymentIntent.client_secret });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`✅ Serveur lancé sur le port ${PORT}`);
 });
