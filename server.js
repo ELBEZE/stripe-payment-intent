@@ -1,16 +1,23 @@
+// ✅ Chargement dynamique des variables d'environnement
+require('dotenv').config({
+  path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env'
+});
+
 const express = require('express');
 const path = require('path');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const cors = require('cors');
+const bodyParser = require('body-parser'); // ✅ Ajouté
 
 const app = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // ta clé secrète Stripe est lue dans les variables Render
+
+// ✅ Clé Stripe tirée de .env ou .env.production selon le mode
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // ✅ Ajouté
 app.use(express.static(__dirname));
 
-// Affichage HTML
+// 👉 Affichage du formulaire HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -21,7 +28,7 @@ app.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 50000, // 500 euros
       currency: 'eur',
-      capture_method: 'manual' // ✅ Empreinte CB sans encaissement immédiat
+      capture_method: 'manual'
     });
 
     res.send({ clientSecret: paymentIntent.client_secret });
@@ -29,7 +36,8 @@ app.post('/create-payment-intent', async (req, res) => {
     res.status(500).send({ error: err.message });
   }
 });
-// ✅ Capture manuelle d'une empreinte CB
+
+// ✅ Capture d'une empreinte CB
 app.post('/capture-payment', async (req, res) => {
   const { paymentIntentId } = req.body;
   try {
@@ -51,7 +59,8 @@ app.post('/cancel-payment', async (req, res) => {
   }
 });
 
+// 🚀 Démarrage serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serveur lancé sur le port ${PORT}`);
+  console.log(`✅ Serveur lancé sur le port ${PORT}`);
 });
