@@ -1,122 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <title>Empreinte de Carte Bancaire</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
       body {
-        font-family: sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        padding: 40px;
+        background: #f8f8f8;
+        text-align: center;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      form {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
         padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
       }
-
-      .success-message {
-        display: none;
-        margin-top: 20px;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: #e0ffe0;
-        color: #006600;
-        font-weight: bold;
+      #payment-element {
+        margin-bottom: 24px;
       }
-
-      #chargement {
-        display: none;
-        margin-top: 15px;
-        font-weight: bold;
-        color: #444;
+      #submit {
+        background-color: #5469d4;
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #submit:disabled {
+        background-color: #bbb;
+        cursor: not-allowed;
+      }
+      #message {
+        margin-top: 16px;
+        font-size: 14px;
       }
     </style>
   </head>
   <body>
-    <h1>Empreinte de Carte Bancaire</h1>
-
+    <h1>💳 Empreinte de Carte Bancaire</h1>
     <form id="payment-form">
       <div id="payment-element">
-        <!-- Stripe injectera le champ ici -->
+        <!-- Elements injected here -->
       </div>
       <button id="submit">Valider</button>
+      <div id="message"></div>
     </form>
 
-    <!-- Message de chargement -->
-    <div id="chargement">⏳ Merci de patienter pendant l’enregistrement de votre empreinte bancaire…</div>
-
-    <!-- Message de succès -->
-    <div id="success-message" class="success-message">✅ Empreinte enregistrée avec succès !</div>
-
     <script>
-      const stripe = Stripe("pk_test_…"); // ← ta clé publique ici
-      const options = {
-        clientSecret: "pi_…_secret_…", // ← ton client secret ici
+      // Fonction pour afficher un message de succès/erreur
+      const showMessage = (messageText) => {
+        const messageContainer = document.querySelector("#message");
+        messageContainer.textContent = messageText;
       };
 
-      const elements = stripe.elements(options);
+      // Initialise Stripe avec ta clé publique
+      const stripe = Stripe("pk_test_51NBcYZGzZWSN7sTFeQu3MaWPK...");
+      
+      // Récupère le clientSecret via l’URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientSecret = urlParams.get("clientSecret");
+
+      const elements = stripe.elements({ clientSecret });
       const paymentElement = elements.create("payment");
       paymentElement.mount("#payment-element");
 
       const form = document.getElementById("payment-form");
-      const messageChargement = document.getElementById("chargement");
-      const successMessage = document.getElementById("success-message");
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        document.querySelector("#submit").disabled = true;
 
-        // Affiche "Merci de patienter…" immédiatement
-        messageChargement.style.display = "block";
-
-        const { error } = await stripe.confirmPayment({
+        const { error } = await stripe.confirmCardSetup(clientSecret, {
           elements,
           confirmParams: {
-            return_url: window.location.href, // facultatif, ici on reste sur place
+            return_url: window.location.href,
           },
-          redirect: "if_required",
         });
 
-        // Masque le message de chargement
-        messageChargement.style.display = "none";
-
         if (error) {
-          alert(error.message);
+          showMessage("❌ " + error.message);
+          document.querySelector("#submit").disabled = false;
         } else {
-          successMessage.style.display = "block";
+          showMessage("✅ Empreinte enregistrée avec succès !");
         }
       });
-    <script>
-  const stripe = Stripe('pk_test_51RoWOb1ASDwMqR4fOhDUI7Gq2prQNCAPCnZbgfZhaWkqHaVadEMLA0iLSTNr2DZJWOf4DonrY5sc3mtEwXs3dPpe00z07TynFD'); // ← Mets ici ta vraie clé publique Stripe
-
-  const elements = stripe.elements();
-  const card = elements.create('card');
-  card.mount('#card-element');
-
-  const form = document.getElementById('payment-form');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    // 1. Appelle ton serveur pour créer un PaymentIntent
-    const response = await fetch('/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}) // tu pourrais ajouter un montant ou nom si besoin
-    });
-
-    const { clientSecret } = await response.json();
-
-    // 2. Confirme l’empreinte (sans capture)
-    const result = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: card,
-        billing_details: {
-          name: document.getElementById('name').value
-        }
-      }
-    });
-
-    if (result.error) {
-      document.getElementById('card-errors').textContent = result.error.message;
-    } else {
-      if (result.paymentIntent.status === 'requires_capture') {
-        alert("✅ Empreinte enregistrée avec succès !");
-      }
-    }
-  });
-</script>
+    </script>
+  </body>
+</html>
