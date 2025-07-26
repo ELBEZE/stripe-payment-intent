@@ -7,6 +7,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser'); // ✅ Ajouté
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // ✅ Clé Stripe lue via .env
 
 const app = express();
 
