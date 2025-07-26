@@ -81,6 +81,42 @@
           successMessage.style.display = "block";
         }
       });
-    </script>
-  </body>
-</html>
+    <script>
+  const stripe = Stripe('pk_test_51RoWOb1ASDwMqR4fOhDUI7Gq2prQNCAPCnZbgfZhaWkqHaVadEMLA0iLSTNr2DZJWOf4DonrY5sc3mtEwXs3dPpe00z07TynFD'); // ← Mets ici ta vraie clé publique Stripe
+
+  const elements = stripe.elements();
+  const card = elements.create('card');
+  card.mount('#card-element');
+
+  const form = document.getElementById('payment-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // 1. Appelle ton serveur pour créer un PaymentIntent
+    const response = await fetch('/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}) // tu pourrais ajouter un montant ou nom si besoin
+    });
+
+    const { clientSecret } = await response.json();
+
+    // 2. Confirme l’empreinte (sans capture)
+    const result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: card,
+        billing_details: {
+          name: document.getElementById('name').value
+        }
+      }
+    });
+
+    if (result.error) {
+      document.getElementById('card-errors').textContent = result.error.message;
+    } else {
+      if (result.paymentIntent.status === 'requires_capture') {
+        alert("✅ Empreinte enregistrée avec succès !");
+      }
+    }
+  });
+</script>
