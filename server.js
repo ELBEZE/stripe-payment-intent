@@ -29,7 +29,7 @@ app.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 50000, // 500 euros
       currency: 'eur',
-      capture_method: 'manual'
+      capture_method: 'manual',
        metadata: { nom: nom || 'non précisé' } // 🆕 ajout du nom dans metadata
     });
 
