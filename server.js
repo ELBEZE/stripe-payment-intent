@@ -25,11 +25,14 @@ app.get('/', (req, res) => {
 // 🔒 Création du PaymentIntent avec capture différée
 app.post('/create-payment-intent', async (req, res) => {
   try {
+    const { nom } = req.body;
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 50000, // 500 euros
       currency: 'eur',
       capture_method: 'manual'
+       metadata: { nom: nom || 'non précisé' } // 🆕 ajout du nom dans metadata
     });
+
 
     res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
