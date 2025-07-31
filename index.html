@@ -66,9 +66,10 @@
       if (result.error) {
         document.getElementById("card-errors").textContent = result.error.message;
       } else {
-        if (result.paymentIntent.status === "succeeded") {
-          alert("Paiement réussi !");
-        }
+      if (result.paymentIntent.status === "requires_capture") {
+  document.getElementById("confirmation-message").style.display = "block";
+}
+        
       }
     });
   </script>
