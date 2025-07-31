@@ -31,7 +31,10 @@
     </div>
     <button type="submit">Valider</button>
   </form>
-
+<div id="confirmation-message" style="display: none; margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #e6ffed;">
+  ✅ Votre empreinte de carte bancaire a bien été enregistrée. Aucun débit n’a été effectué.
+</div>
+  
   <script>
     const stripe = Stripe("pk_live_51RoWOb1ASDwMqR4fM5FjB5n7LSfJqzYOvgYMI6LOf1ROBNbD4taFDyDYRWCjvnKNZX3Lt9mvFdy7Vmv2VLzpVtfY00AIEXh0No");
     const elements = stripe.elements();
